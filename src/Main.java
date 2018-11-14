@@ -3,7 +3,7 @@ import java.util.*;
 public class Main {
 
     private static boolean isFinished = false;
-    private static ArrayList<Page> ram = new ArrayList<>();
+    public static ArrayList<Page> ram = new ArrayList<>();
     private static Queue<Integer> freeFrames = new LinkedList<>();
     private static Map<Integer, Process> processMap = new HashMap<>();
 
@@ -75,6 +75,7 @@ public class Main {
                 startMainInput();
                 break;
             case 4:
+                isFinished = true;
                 System.exit(0);
                 break;
             default:
@@ -135,16 +136,25 @@ public class Main {
                 startMainInput();
                 break;
             case 5:
+                isFinished = true;
                 System.exit(0);
+                break;
+            default:
+                System.out.println("Error.");
+                break;
         }
     }
 
     private static void createProcess(int pid, int numberOfPages) {
-        Process newProcess = new Process(pid, numberOfPages);
-        processMap.put(pid, newProcess);
-        ArrayList<Page> pageTable = newProcess.getPageTable();
-        for (int i = 0; i < numberOfPages; i++) {
-            pageTable.get(i).frame = freeFrames.remove();
+        if (numberOfPages > freeFrames.size()) {
+            System.out.println("Error. Not enough space.");
+        } else {
+            Process newProcess = new Process(pid, numberOfPages);
+            processMap.put(pid, newProcess);
+            ArrayList<Page> pageTable = newProcess.getPageTable();
+            for (int i = 0; i < numberOfPages; i++) {
+                pageTable.get(i).frame = freeFrames.remove();
+            }
         }
     }
 
@@ -169,12 +179,12 @@ public class Main {
 
         System.out.print("Enter PID: ");
         int inputPid = scanner.nextInt();
-        System.out.print("Enter Logical Address: ");
+        System.out.print("Enter Logical Address (Page Number): ");
         int inputLogicalAddress = scanner.nextInt();
-        System.out.println(translateAddress(inputPid, inputLogicalAddress));
+        int translatedAddress = translateAddress(inputPid, inputLogicalAddress);
+        System.out.printf("Page %d of process %d is at frame %d", inputLogicalAddress, inputPid, translatedAddress);
     }
 
-    // TODO: PRINTF() to make it pretty
     private static int translateAddress(int pid, int pageNumber) {
         Process process = processMap.get(pid);
         return process.getPageTable().get(pageNumber).frame;
@@ -192,13 +202,13 @@ class Process {
 
     private void createPages(int numberOfPages) {
         for (int i = 0; i < numberOfPages; i++) {
-            pageTable.add(new Page(i, pid));
+            Page newPage = new Page(pid, i);
+            pageTable.add(newPage);
+            Main.ram.add(newPage);
         }
     }
 
-    public ArrayList<Page> getPageTable() {
-        return pageTable;
-    }
+    public ArrayList<Page> getPageTable() { return pageTable; }
 }
 
 class Page {
